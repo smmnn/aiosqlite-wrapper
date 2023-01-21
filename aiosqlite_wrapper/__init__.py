@@ -21,7 +21,7 @@ class database():
             if not log_path.endswith(('.txt', '.log')):
                 raise FileTypeError('log file must end with .txt or .log')
             with open(log_path, 'a+') as f:
-                f.write(f'{datetime.datetime.now()} | database activated\n\n')
+                f.write(f'{datetime.datetime.now()} | database activated\n')
         self.log_path      = log_path
         self.list_or_tuple = list_or_tuple
         self.error_raise   = error_raise
@@ -105,7 +105,7 @@ class database():
     # REGULAR
 
     # create a db
-    async def create(self) -> str:
+    def create(self) -> str:
         """
         create
         ----
@@ -117,7 +117,7 @@ class database():
             return f'succesfully initialised database under {self.db}'
 
     # execute a query
-    async def execute(self, query: str, file_path: str=None) -> list:
+    async def execute(self, query: str, file_path: str=None, format: bool=True) -> list:
         """
         execute
         -------
@@ -138,8 +138,11 @@ class database():
         except Exception as e:
             # handle errors
             return self.handle_error(e)
-
-        final_result = self.handle_result(result)
+        
+        if format:
+            final_result = self.handle_result(result)
+        elif not format:
+            final_result = result
 
         if file_path:
             with open(file_path, 'a+') as file:
@@ -190,8 +193,50 @@ class database():
         # return the final result
         return final_result
 
+    # fetch items
+    async def get(self, table: str, where: str, items: str='*', file_path: str=None) -> list:
+        """
+        fetch
+        -----
+        fetch data from a table. column select defaults to all, but you can specify.
+        
+        example query:
+        
+        `await db.fetch('example_table', 'example_column, example_column')`
+
+        optionally, you can also write this data into a file using the file_path paramater.
+        example query with file_path:
+        
+        `await db.fetch('example_table', file_path='my_data.txt')`
+        """
+        # try statement so we catch errors
+        try:
+            # async with a connection
+            async with aiosqlite.connect(self.db) as cursor:
+                # execute the query
+                exec = await cursor.execute(f'select {items} from {table} where {where}')
+                # fetch any results from the query
+                result = await exec.fetchall()
+                # commit the transaction
+                await cursor.commit()
+        except Exception as e:
+            # handle errors
+            return self.handle_error(e)
+        
+        # handle the result so it gives back sanitized data
+        final_result = self.handle_result(result)
+
+        # if applicable write to a file
+        if file_path:
+            with open(file_path, 'a+') as file:
+                file.write(str(final_result))
+        
+        self.log(f'fetched {items} from {table} where {where}')
+        # return the final result
+        return final_result
+
     # insert items
-    async def insert(self, table: str, values: list[str]) -> str:
+    async def insert(self, table: str, values: list) -> str:
         """
         insert
         ------
