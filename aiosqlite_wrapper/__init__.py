@@ -82,7 +82,7 @@ class database():
         """
         # if the result is nothing return a success message
         if result == []:
-            return 'query ok, no results'
+            return None
         
         # format the result into either a tuple or a list
         if self.list_or_tuple is False:
