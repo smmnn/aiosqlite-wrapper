@@ -76,7 +76,7 @@ class database():
             return f'error: {error}'
 
     # handle result data
-    def handle_result(self, result: any) -> list:
+    def handle_result(self, result: any, unlist: bool=False) -> list:
         """
         handle a result to format it into list with either tuples or lists
         """
@@ -96,8 +96,7 @@ class database():
                 final_result.append(i[0])
             else:
                 final_result.append(i)
-        
-        if len(final_result) == 1:
+        if unlist is True and len(final_result) == 1:
             return final_result[0]
 
         return final_result
@@ -117,7 +116,7 @@ class database():
             return f'succesfully initialised database under {self.db}'
 
     # execute a query
-    async def execute(self, query: str, file_path: str=None, format: bool=True) -> list:
+    async def execute(self, query: str, file_path: str=None, format: bool=True, unlist: bool=False) -> list:
         """
         execute
         -------
@@ -140,7 +139,7 @@ class database():
             return self.handle_error(e)
         
         if format:
-            final_result = self.handle_result(result)
+            final_result = self.handle_result(result, unlist)
         elif not format:
             final_result = result
 
